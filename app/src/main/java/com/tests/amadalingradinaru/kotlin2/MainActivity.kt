@@ -1,22 +1,22 @@
 package com.tests.amadalingradinaru.kotlin2
 
+import android.location.LocationManager
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import com.tests.amadalingradinaru.kotlin2.domain.RequestForecastCommand
+import com.tests.amadalingradinaru.kotlin2.domain.model.Forecast
+import org.jetbrains.anko.async
 import org.jetbrains.anko.find
+import org.jetbrains.anko.toast
+import org.jetbrains.anko.uiThread
 
 class MainActivity : AppCompatActivity() {
 
-    private val items = listOf(
-            "Mon 6/23 - Sunny - 31/17",
-            "Tue 6/24 - Foggy - 21/8",
-            "Wed 6/25 - Cloudy - 22/17",
-            "Thurs 6/26 - Rainy - 18/11",
-            "Fri 6/27 - Foggy - 21/10",
-            "Sat 6/28 - TRAPPED IN WEATHERSTATION - 23/18",
-            "Sun 6/29 - Sunny - 20/7"
-    )
+
+    private var locationManager : LocationManager? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,9 +24,25 @@ class MainActivity : AppCompatActivity() {
 
 
 
-        val forecastList = find<RecyclerView>(R.id.forecast_list)
+        val forecastList: RecyclerView = find(R.id.forecast_list)
         forecastList.layoutManager = LinearLayoutManager(this)
-        forecastList.adapter = ForecastListAdapter(items)
+
+        // Create persistent LocationManager reference
+        locationManager = getSystemService(LOCATION_SERVICE) as LocationManager?
+
+
+        async {
+            val result = RequestForecastCommand("29001").execute()
+            uiThread {
+                forecastList.adapter = ForecastListAdapter(result, object : ForecastListAdapter.OnItemClickListener{
+                    override fun invoke(forecast: Forecast.Forecast) {
+                        toast(forecast.date)
+                    }
+                })
+            }
+
+        }
+
 
     }
 }
